@@ -25,7 +25,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-    "mcp[cli]>=1.6.0",
+    "fastmcp>=2.0.0",
     "pydantic>=2.10.6",
 ]
 
@@ -39,6 +39,10 @@ Source = "https://github.com/konokenj/cdk-api-mcp-server"
 
 [tool.hatch.version]
 path = "cdk_api_mcp_server/__about__.py"
+
+[tool.hatch.envs.default.scripts]
+server = 'python cdk_api_mcp_server/server.py'
+dev = 'npx @modelcontextprotocol/inspector hatch run python cdk_api_mcp_server/server.py'
 
 [tool.hatch.envs.dev]
 extra-dependencies = [
@@ -57,17 +61,17 @@ download-force = "python cdk_api_downloader/main.py --force"
 
 [tool.hatch.envs.test]
 dependencies = [
+  "fastmcp>=2.0.0",
+  "pydantic>=2.10.6",
   "pytest",
   "pytest-cov",
   "pytest-mock",
+  "pytest-asyncio",
 ]
 
 [tool.hatch.envs.test.scripts]
 test = "pytest {args:tests}"
 test-cov = "pytest --cov {args:tests}"
-
-[[tool.hatch.envs.test.matrix]]
-python = ["3.12"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["cdk_api_mcp_server"]
@@ -90,4 +94,10 @@ exclude_lines = [
   "no cov",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "asyncio: mark test as an asyncio coroutine",
 ]
