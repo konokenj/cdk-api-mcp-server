@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cdk-api-mcp-server"
+dynamic = ["version"]
+description = 'An MCP server provides AWS CDK API Reference'
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Kenji Kono", email = "konoken@amazon.co.jp" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/konokenj/cdk-api-mcp-server#readme"
+Issues = "https://github.com/konokenj/cdk-api-mcp-server/issues"
+Source = "https://github.com/konokenj/cdk-api-mcp-server"
+
+[tool.hatch.version]
+path = "src/cdk_api_mcp_server/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/cdk_api_mcp_server tests}"
+
+[tool.coverage.run]
+source_pkgs = ["cdk_api_mcp_server", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/cdk_api_mcp_server/__about__.py",
+]
+
+[tool.coverage.paths]
+cdk_api_mcp_server = ["src/cdk_api_mcp_server", "*/cdk-api-mcp-server/src/cdk_api_mcp_server"]
+tests = ["tests", "*/cdk-api-mcp-server/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
