@@ -198,6 +198,37 @@ def is_update_needed() -> Tuple[bool, Optional[str], Optional[str]]:
     return False, latest_version_str, latest_timestamp
 
 
+def clean_output_directories():
+    """
+    Clean the output directories (resources/aws-cdk and .work/aws-cdk).
+    
+    Returns:
+        bool: True if cleaning was successful, False otherwise
+    """
+    try:
+        print("Cleaning output directories...")
+        
+        # Clean resources directory
+        if os.path.exists(OUT_DIR):
+            print(f"Removing existing directory: {OUT_DIR}")
+            shutil.rmtree(OUT_DIR)
+        
+        # Clean work directory
+        if os.path.exists(WORK_DIR):
+            print(f"Removing existing directory: {WORK_DIR}")
+            shutil.rmtree(WORK_DIR)
+        
+        # Create directories
+        os.makedirs(OUT_DIR, exist_ok=True)
+        os.makedirs(WORK_DIR, exist_ok=True)
+        
+        print("Output directories cleaned successfully")
+        return True
+    except Exception as e:
+        print(f"Error cleaning output directories: {e}")
+        return False
+
+
 def download_github_repo():
     """
     Download the AWS CDK repository from GitHub.
@@ -210,10 +241,6 @@ def download_github_repo():
         
         # Create work directory if it doesn't exist
         work_path = Path(WORK_DIR)
-        if work_path.exists():
-            print(f"Cleaning existing directory: {WORK_DIR}")
-            shutil.rmtree(WORK_DIR)
-        
         work_path.mkdir(parents=True, exist_ok=True)
         
         # Download the repository as a zip file
@@ -352,22 +379,26 @@ def download(force: bool = False):
         if force:
             print("Force flag is set, proceeding with download regardless of version")
         
-        # Step 3: Download the repository
+        # Step 3: Clean output directories before proceeding
+        if not clean_output_directories():
+            return 1
+        
+        # Step 4: Download the repository
         if not download_github_repo():
             return 1
         
-        # Step 4: Process the repository files
+        # Step 5: Process the repository files
         success, markdown_count, integ_test_count = process_repo_files()
         if not success:
             return 1
         
-        # Step 5: Check if file count has decreased
+        # Step 6: Check if file count has decreased
         if check_file_count_decrease(current_info, markdown_count, integ_test_count):
             print("WARNING: The number of processed files has decreased compared to the previous run.")
             print("This might indicate an issue with the repository or the download process.")
             print("Please check the repository and the download process.")
         
-        # Step 6: Save the processed version
+        # Step 7: Save the processed version
         if latest_version and latest_timestamp:
             if not save_version_info(latest_version, latest_timestamp, markdown_count, integ_test_count):
                 print("Warning: Failed to save version information")

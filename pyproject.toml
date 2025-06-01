@@ -50,6 +50,7 @@ dependencies = ["PyGithub", "semantic-version"]
 
 [tool.hatch.envs.downloader.scripts]
 download = "python cdk_api_downloader/main.py"
+download-force = "python cdk_api_downloader/main.py --force"
 
 [tool.hatch.envs.test]
 dependencies = [

@@ -5,23 +5,43 @@ import re
 
 def find_markdown_files(basedir: str):
     """
-    Find all markdown files in $basedir .
-    Include: **/*.md
-    Exclude: cli-regression-patches/, *.snapshot/
+    Find markdown files in $basedir.
+    Include: 
+        - packages/@aws-cdk/**/*.md
+        - packages/aws-cdk-lib/**/*.md
+        - DEPRECATED_APIs.md
+    Exclude: 
+        - cli-regression-patches/
+        - *.snapshot/
+        - Files containing 'There are no hand-written'
 
     Args:
         basedir (str): base directory of the repository
     """
-
-    for file in glob.glob(
-        f"{basedir}/**/*.md",
-        recursive=True,
-    ):
-        if "cli-regression-patches/" in file:
-            continue
-        if ".snapshot/" in file:
-            continue
-        yield file
+    # 特定のパターンに一致するファイルを検索
+    patterns = [
+        f"{basedir}/packages/@aws-cdk/**/*.md",
+        f"{basedir}/packages/aws-cdk-lib/**/*.md",
+        f"{basedir}/DEPRECATED_APIs.md",
+    ]
+    
+    for pattern in patterns:
+        for file in glob.glob(pattern, recursive=True):
+            # 除外条件をチェック
+            if "cli-regression-patches/" in file or ".snapshot/" in file:
+                continue
+                
+            # ファイルの内容をチェック
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    if "There are no hand-written" in content:
+                        continue
+            except Exception:
+                # ファイル読み込みエラーの場合はスキップ
+                continue
+                
+            yield file
 
 
 def find_integ_test_files(basedir: str):

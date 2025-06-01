@@ -8,46 +8,47 @@ import argparse
 import importlib
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import List
 
 
 def get_available_repos() -> List[str]:
     """
-    Get a list of available repositories by scanning the scripts/download directory.
-    
+    Get a list of available repositories by scanning the same directory.
+
     Returns:
         List[str]: List of repository names
     """
     download_dir = Path(__file__).parent
     repos = []
-    
+
     for item in download_dir.iterdir():
-        if item.is_dir() and (item / "src" / "main.py").exists():
+        if item.is_dir() and (item / "main.py").exists():
             repos.append(item.name)
-    
+
     return repos
 
 
 def download_repo(repo_name: str, force: bool = False) -> int:
     """
     Download data for a specific repository.
-    
+
     Args:
         repo_name (str): Name of the repository
         force (bool): Force download even if the version is already processed
-        
+
     Returns:
         int: Exit code (0 for success, non-zero for failure)
     """
     try:
         # Import the repository's main module
-        module_path = f"scripts.download.{repo_name}.src.main"
+        module_path = f"cdk_api_downloader.{repo_name}.main"
         module = importlib.import_module(module_path)
-        
+
         # Call the download function with appropriate arguments
         if hasattr(module, "download"):
             # Check if the download function accepts a force parameter
             import inspect
+
             sig = inspect.signature(module.download)
             if "force" in sig.parameters:
                 return module.download(force=force)
@@ -56,6 +57,7 @@ def download_repo(repo_name: str, force: bool = False) -> int:
         elif hasattr(module, "main"):
             # Try to call main with force parameter if it accepts it
             import inspect
+
             sig = inspect.signature(module.main)
             if "force" in sig.parameters:
                 return module.main(force=force)
@@ -75,40 +77,40 @@ def download_repo(repo_name: str, force: bool = False) -> int:
 def main() -> int:
     """
     Main entry point for the download script.
-    
+
     Returns:
         int: Exit code (0 for success, non-zero for failure)
     """
     parser = argparse.ArgumentParser(description="Download repository data")
-    
+
     available_repos = get_available_repos()
-    
+
     parser.add_argument(
-        "--repos", 
-        nargs="+", 
+        "--repos",
+        nargs="+",
         choices=available_repos,
         default=available_repos,
-        help="Repositories to download (default: all available repositories)"
+        help="Repositories to download (default: all available repositories)",
     )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Force download even if the version is already processed"
+        help="Force download even if the version is already processed",
     )
-    
+
     args = parser.parse_args()
-    
+
     if not available_repos:
-        print("No repositories found in scripts/download directory")
+        print("No repositories found in directory")
         return 1
-    
+
     exit_code = 0
     for repo in args.repos:
         print(f"Downloading {repo}...")
         repo_exit_code = download_repo(repo, force=args.force)
         if repo_exit_code != 0:
             exit_code = repo_exit_code
-    
+
     return exit_code
 
 
