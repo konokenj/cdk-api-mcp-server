@@ -46,10 +46,7 @@ extra-dependencies = [
 check = "mypy --install-types --non-interactive {args:src/cdk_api_mcp_server tests}"
 
 [tool.hatch.envs.downloader]
-dependencies = ["PyGithub"]
-
-[tool.hatch.envs.default.scripts]
-download = "hatch -e downloader run download"
+dependencies = ["PyGithub", "semantic-version"]
 
 [tool.hatch.envs.downloader.scripts]
 download = "python scripts/download/main.py"
