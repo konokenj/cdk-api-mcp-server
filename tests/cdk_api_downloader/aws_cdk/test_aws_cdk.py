@@ -1,5 +1,5 @@
 from pytest_mock import MockerFixture
-from cdk_knowledge_extractor.aws_cdk import (
+from cdk_api_downloader.aws_cdk.aws_cdk import (
     find_markdown_files,
     find_integ_test_files,
     get_module_name,

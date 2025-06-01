@@ -32,38 +32,53 @@ Issues = "https://github.com/konokenj/cdk-api-mcp-server/issues"
 Source = "https://github.com/konokenj/cdk-api-mcp-server"
 
 [project.scripts]
-"konokenj.cdk-api-mcp-server" = "src.cdk_api_mcp_server.server:main"
+"konokenj.cdk-api-mcp-server" = "cdk_api_mcp_server.server:main"
 
 [tool.hatch.version]
-path = "src/cdk_api_mcp_server/__about__.py"
+path = "cdk_api_mcp_server/__about__.py"
 
-[tool.hatch.envs.types]
+[tool.hatch.envs.dev]
 extra-dependencies = [
   "mypy>=1.0.0",
 ]
 
-[tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/cdk_api_mcp_server tests}"
+[tool.hatch.envs.dev.scripts]
+check = "mypy --install-types --non-interactive {args:cdk_api_mcp_server tests}"
 
 [tool.hatch.envs.downloader]
 dependencies = ["PyGithub", "semantic-version"]
 
 [tool.hatch.envs.downloader.scripts]
-download = "python scripts/download/main.py"
+download = "python cdk_api_downloader/main.py"
+
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+]
+
+[tool.hatch.envs.test.scripts]
+test = "pytest {args:tests}"
+test-cov = "pytest --cov {args:tests}"
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.12"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["cdk_api_mcp_server"]
 
 [tool.coverage.run]
-source_pkgs = ["cdk_api_mcp_server", "tests"]
+source_pkgs = ["cdk_api_mcp_server", "cdk_api_downloader", "tests"]
 branch = true
 parallel = true
 omit = [
-  "src/cdk_api_mcp_server/__about__.py",
+  "cdk_api_mcp_server/__about__.py",
 ]
 
 [tool.coverage.paths]
-cdk_api_mcp_server = ["src/cdk_api_mcp_server", "*/cdk-api-mcp-server/src/cdk_api_mcp_server"]
+cdk_api_mcp_server = ["cdk_api_mcp_server", "*/cdk-api-mcp-server/cdk_api_mcp_server"]
+cdk_api_downloader = ["cdk_api_downloader", "*/cdk-api-mcp-server/cdk_api_downloader"]
 tests = ["tests", "*/cdk-api-mcp-server/tests"]
 
 [tool.coverage.report]
