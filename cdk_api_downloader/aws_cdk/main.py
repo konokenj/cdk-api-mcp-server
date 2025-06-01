@@ -29,7 +29,7 @@ GITHUB_DOWNLOAD_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/archive/refs
 
 # Local directories
 WORK_DIR = ".work/aws-cdk"
-OUT_DIR = "resources/aws-cdk"
+OUT_DIR = "cdk_api_mcp_server/resources/aws-cdk"
 VERSION_DIR = "current-versions"
 VERSION_FILE = f"{VERSION_DIR}/aws-cdk.txt"
 
@@ -378,6 +378,8 @@ def download(force: bool = False):
         
         if force:
             print("Force flag is set, proceeding with download regardless of version")
+            # 強制実行時は常に更新が必要と判断
+            update_needed = True
         
         # Step 3: Clean output directories before proceeding
         if not clean_output_directories():

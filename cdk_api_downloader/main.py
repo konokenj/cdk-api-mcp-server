@@ -107,6 +107,7 @@ def main() -> int:
     exit_code = 0
     for repo in args.repos:
         print(f"Downloading {repo}...")
+        # 強制フラグを渡す
         repo_exit_code = download_repo(repo, force=args.force)
         if repo_exit_code != 0:
             exit_code = repo_exit_code

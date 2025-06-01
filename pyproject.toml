@@ -24,7 +24,10 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+    "mcp[cli]>=1.6.0",
+    "pydantic>=2.10.6",
+]
 
 [project.urls]
 Documentation = "https://github.com/konokenj/cdk-api-mcp-server#readme"
