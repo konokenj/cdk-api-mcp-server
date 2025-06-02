@@ -1,14 +1,15 @@
+import io
+from unittest.mock import patch
+
 from pytest_mock import MockerFixture
+
 from cdk_api_downloader.aws_cdk.aws_cdk import (
-    find_markdown_files,
     find_integ_test_files,
+    find_markdown_files,
     get_module_name,
     get_test_name,
     surround_with_codeblock,
 )
-import io
-import sys
-from unittest.mock import mock_open, patch
 
 
 def test_find_markdown_files(mocker: MockerFixture):
@@ -17,12 +18,6 @@ def test_find_markdown_files(mocker: MockerFixture):
         "repositories/aws-cdk/packages/aws-cdk-lib/aws-lakeformation/README.md",
         "repositories/aws-cdk/packages/aws-cdk-lib/aws-codeartifact/README.md",
         "repositories/aws-cdk/DEPRECATED_APIs.md",
-    ]
-
-    ignored_files = [
-        "repositories/aws-cdk/packages/@aws-cdk-testing/framework-integ/test/aws-lambda-nodejs/test/integ.specifycode.js.snapshot/asset.1a1a5806c7ba6c308e1a83f863e2d6f1f82a6daeb20286116d4a8b049faf1506/README.md",
-        "repositories/aws-cdk/packages/@aws-cdk-testing/cli-integ/resources/cli-regression-patches/v2.132.0/NOTES.md",
-        "repositories/aws-cdk/packages/some-other-package/README.md",
     ]
 
     # glob.globのモックを設定
@@ -37,7 +32,7 @@ def test_find_markdown_files(mocker: MockerFixture):
             [expected_files[3]],
         ],
     )
-    
+
     # open関数のモックを設定
     mock_file_contents = {
         expected_files[0]: "# AWS S3\nThis is a readme",
@@ -45,13 +40,13 @@ def test_find_markdown_files(mocker: MockerFixture):
         expected_files[2]: "# AWS CodeArtifact\nThis is a readme",
         expected_files[3]: "# Deprecated APIs\nList of deprecated APIs",
     }
-    
-    def mock_open_func(file, *args, **kwargs):
+
+    def mock_open_func(file, encoding=None):
         content = mock_file_contents.get(file, "")
         return io.StringIO(content)
-    
+
     # open関数をモック
-    with patch("builtins.open", side_effect=mock_open_func):
+    with patch("builtins.open", mock_open_func):
         result = list(find_markdown_files("repositories/aws-cdk"))
         assert sorted(result) == sorted(expected_files)
 
@@ -74,19 +69,19 @@ def test_find_markdown_files_excludes_handwritten(mocker: MockerFixture):
             [],
         ],
     )
-    
+
     # open関数のモックを設定
     mock_file_contents = {
         files[0]: "# AWS Service\nThere are no hand-written examples.",
         files[1]: "# AWS Other\nThis is a valid readme",
     }
-    
-    def mock_open_func(file, *args, **kwargs):
+
+    def mock_open_func(file, encoding=None):
         content = mock_file_contents.get(file, "")
         return io.StringIO(content)
-    
+
     # open関数をモック
-    with patch("builtins.open", side_effect=mock_open_func):
+    with patch("builtins.open", mock_open_func):
         result = list(find_markdown_files("repositories/aws-cdk"))
         # "There are no hand-written"を含むファイルは除外されるはず
         assert result == [files[1]]

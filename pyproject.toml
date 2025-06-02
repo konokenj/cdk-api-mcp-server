@@ -59,7 +59,9 @@ dependencies = ["PyGithub", "semantic-version"]
 download = "python cdk_api_downloader/main.py"
 download-force = "python cdk_api_downloader/main.py --force"
 
-[tool.hatch.envs.test]
+[tool.hatch.envs.hatch-test]
+extra-args = ["-o" , "asyncio_mode=auto"]
+randomize = true
 dependencies = [
   "fastmcp>=2.0.0",
   "pydantic>=2.10.6",
@@ -68,10 +70,6 @@ dependencies = [
   "pytest-mock",
   "pytest-asyncio",
 ]
-
-[tool.hatch.envs.test.scripts]
-test = "pytest {args:tests}"
-test-cov = "pytest --cov {args:tests}"
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -103,7 +101,4 @@ exclude_lines = [
 ]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
-markers = [
-    "asyncio: mark test as an asyncio coroutine",
-]
+asyncio_default_fixture_loop_scope = "function"

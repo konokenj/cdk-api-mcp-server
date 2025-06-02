@@ -1,34 +1,34 @@
-#!/usr/bin/env python3
 """
 Main entry point for downloading repository data.
 This script orchestrates the download process for multiple repositories.
 """
 
+from __future__ import annotations
+
 import argparse
 import importlib
+import logging
 import sys
 from pathlib import Path
-from typing import List
+from typing import list
+
+# ロガーの設定
+logger = logging.getLogger(__name__)
 
 
-def get_available_repos() -> List[str]:
+def get_available_repos() -> list[str]:
     """
     Get a list of available repositories by scanning the same directory.
 
     Returns:
-        List[str]: List of repository names
+        list[str]: List of repository names
     """
     download_dir = Path(__file__).parent
-    repos = []
 
-    for item in download_dir.iterdir():
-        if item.is_dir() and (item / "main.py").exists():
-            repos.append(item.name)
-
-    return repos
+    return [item.name for item in download_dir.iterdir() if item.is_dir() and (item / "main.py").exists()]
 
 
-def download_repo(repo_name: str, force: bool = False) -> int:
+def download_repo(repo_name: str, *, force: bool = False) -> int:
     """
     Download data for a specific repository.
 
@@ -52,25 +52,20 @@ def download_repo(repo_name: str, force: bool = False) -> int:
             sig = inspect.signature(module.download)
             if "force" in sig.parameters:
                 return module.download(force=force)
-            else:
-                return module.download()
-        elif hasattr(module, "main"):
-            # Try to call main with force parameter if it accepts it
-            import inspect
+            return module.download()
 
-            sig = inspect.signature(module.main)
-            if "force" in sig.parameters:
-                return module.main(force=force)
-            else:
-                return module.main()
-        else:
-            print(f"Error: No download or main function found in {module_path}")
-            return 1
-    except ImportError as e:
-        print(f"Error importing module for repository '{repo_name}': {e}")
+        # Try to call main with force parameter if it accepts it
+        import inspect
+
+        sig = inspect.signature(module.main)
+        if "force" in sig.parameters:
+            return module.main(force=force)
+        return module.main()
+    except ImportError:
+        logger.exception("Error importing module %s", module_path)
         return 1
-    except Exception as e:
-        print(f"Error downloading repository '{repo_name}': {e}")
+    except (AttributeError, TypeError, ValueError):
+        logger.exception("Error calling download function for %s", repo_name)
         return 1
 
 
@@ -101,12 +96,10 @@ def main() -> int:
     args = parser.parse_args()
 
     if not available_repos:
-        print("No repositories found in directory")
         return 1
 
     exit_code = 0
     for repo in args.repos:
-        print(f"Downloading {repo}...")
         # 強制フラグを渡す
         repo_exit_code = download_repo(repo, force=args.force)
         if repo_exit_code != 0:

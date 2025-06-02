@@ -1,16 +1,20 @@
 import glob
+import logging
 import os
 import re
+
+# ロガーの設定
+logger = logging.getLogger(__name__)
 
 
 def find_markdown_files(basedir: str):
     """
     Find markdown files in $basedir.
-    Include: 
+    Include:
         - packages/@aws-cdk/**/*.md
         - packages/aws-cdk-lib/**/*.md
         - DEPRECATED_APIs.md
-    Exclude: 
+    Exclude:
         - cli-regression-patches/
         - *.snapshot/
         - Files containing 'There are no hand-written'
@@ -24,23 +28,24 @@ def find_markdown_files(basedir: str):
         f"{basedir}/packages/aws-cdk-lib/**/*.md",
         f"{basedir}/DEPRECATED_APIs.md",
     ]
-    
+
     for pattern in patterns:
         for file in glob.glob(pattern, recursive=True):
             # 除外条件をチェック
             if "cli-regression-patches/" in file or ".snapshot/" in file:
                 continue
-                
+
             # ファイルの内容をチェック
             try:
-                with open(file, 'r', encoding='utf-8') as f:
+                with open(file, encoding="utf-8") as f:
                     content = f.read()
                     if "There are no hand-written" in content:
                         continue
-            except Exception:
+            except (OSError, UnicodeDecodeError) as e:
                 # ファイル読み込みエラーの場合はスキップ
+                logger.warning("Failed to read file %s: %s", file, e)
                 continue
-                
+
             yield file
 
 
@@ -72,8 +77,7 @@ def get_module_name(path: str):
         path (str): path to the file
     """
     path = re.sub(r".*/framework-integ/test/", "", path)
-    path = path.split("/")[0]
-    return path
+    return path.split("/")[0]
 
 
 def get_test_name(path: str):
@@ -84,8 +88,7 @@ def get_test_name(path: str):
     """
     path = os.path.basename(path)
     path = path.replace("integ.", "")
-    path = os.path.splitext(path)[0]
-    return path
+    return os.path.splitext(path)[0]
 
 
 def surround_with_codeblock(module_name: str, test_name: str, content: str):
