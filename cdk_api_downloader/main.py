@@ -10,13 +10,13 @@ import importlib
 import logging
 import sys
 from pathlib import Path
-from typing import list
+from typing import List
 
 # ロガーの設定
 logger = logging.getLogger(__name__)
 
 
-def get_available_repos() -> list[str]:
+def get_available_repos() -> List[str]:
     """
     Get a list of available repositories by scanning the same directory.
 
@@ -25,7 +25,11 @@ def get_available_repos() -> list[str]:
     """
     download_dir = Path(__file__).parent
 
-    return [item.name for item in download_dir.iterdir() if item.is_dir() and (item / "main.py").exists()]
+    return [
+        item.name
+        for item in download_dir.iterdir()
+        if item.is_dir() and (item / "main.py").exists()
+    ]
 
 
 def download_repo(repo_name: str, *, force: bool = False) -> int:
