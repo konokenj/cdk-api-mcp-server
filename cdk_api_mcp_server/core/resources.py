@@ -3,7 +3,10 @@
 
 import logging
 import importlib.resources
+import os
+from pathlib import Path
 from typing import Optional, List
+from pydantic import BaseModel, Field
 
 
 # Set up logging
@@ -13,6 +16,21 @@ logger = logging.getLogger(__name__)
 # Resource package paths
 DOCS_PACKAGE = "cdk_api_mcp_server.resources.aws-cdk.docs"
 INTEG_TESTS_PACKAGE = "cdk_api_mcp_server.resources.aws-cdk.integ-tests"
+
+# Define resource directories for backward compatibility with tests
+DOCS_DIR = Path(__file__).parent.parent / "resources" / "aws-cdk" / "docs"
+INTEG_TESTS_DIR = Path(__file__).parent.parent / "resources" / "aws-cdk" / "integ-tests"
+
+
+class ResourcePath(BaseModel):
+    """Resource path model for importlib.resources."""
+    
+    package_path: str = Field(description="Base package path")
+    parts: List[str] = Field(default_factory=list, description="Additional path parts")
+    
+    def get_full_path(self) -> str:
+        """Get the full package path by joining parts."""
+        return ".".join([self.package_path] + self.parts)
 
 
 def get_resource_path(package_path: str, *parts: str) -> str:
@@ -25,7 +43,8 @@ def get_resource_path(package_path: str, *parts: str) -> str:
     Returns:
         Full package path
     """
-    return ".".join([package_path] + list(parts))
+    resource_path = ResourcePath(package_path=package_path, parts=list(parts))
+    return resource_path.get_full_path()
 
 
 def is_resource_dir(package_path: str) -> bool:
@@ -76,6 +95,13 @@ def is_resource_file(package_path: str, name: str) -> bool:
         return False
 
 
+class ResourceContent(BaseModel):
+    """Resource content model."""
+    
+    content: str = Field(description="Content of the resource")
+    error: Optional[str] = Field(default=None, description="Error message if resource not found")
+
+
 def read_resource_text(package_path: str, name: str) -> str:
     """Read text from a resource.
 
@@ -87,6 +113,9 @@ def read_resource_text(package_path: str, name: str) -> str:
         Resource content as text
     """
     try:
-        return importlib.resources.read_text(package_path, name)
+        content = importlib.resources.read_text(package_path, name)
+        return content
     except (ModuleNotFoundError, ImportError, FileNotFoundError):
-        return f"Error: Resource '{name}' not found in '{package_path}'"
+        error_msg = f"Error: Resource '{name}' not found in '{package_path}'"
+        logger.error(error_msg)
+        return error_msg
