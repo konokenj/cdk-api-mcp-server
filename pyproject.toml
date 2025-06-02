@@ -73,6 +73,12 @@ dependencies = [
 test = "pytest {args:tests}"
 test-cov = "pytest --cov {args:tests}"
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "cdk_api_mcp_server/**/*.py",
+  "cdk_api_mcp_server/resources/**/*"
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["cdk_api_mcp_server"]
 
