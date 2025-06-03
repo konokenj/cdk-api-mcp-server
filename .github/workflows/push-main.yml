@@ -1,0 +1,10 @@
+name: Main Branch Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    uses: ./.github/workflows/release.yml

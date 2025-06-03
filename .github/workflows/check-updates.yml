@@ -1,0 +1,37 @@
+name: Check for CDK API Updates
+
+on:
+  schedule:
+    - cron: "0 * * * *" # Run every hour at minute 0
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatch
+
+      - name: Check for updates
+        id: check
+        run: |
+          hatch run dev:check-updates
+          exit_code=$?
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          if [[ $exit_code != 0 && $exit_code != 1 ]]; then
+            exit 1
+          fi
+
+      - name: Trigger release workflow
+        if: steps.check.outputs.exit_code == '0'
+        uses: ./.github/workflows/release.yml
