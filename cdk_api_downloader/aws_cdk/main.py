@@ -374,10 +374,10 @@ def process_repo_files() -> tuple[bool, int, int]:
             # 出力先ディレクトリを作成
             os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-            # ファイル内容を読み込み、そのままコピー
-            with open(file) as f:
+            # ファイル内容を読み込み、そのままコピー（マークダウン修飾なし）
+            with open(file, encoding="utf-8") as f:
                 content = f.read()
-                with open(output_file, "w") as out_f:
+                with open(output_file, "w", encoding="utf-8") as out_f:
                     out_f.write(content)
     except OSError:
         logger.exception("Failed to process integration test files")

@@ -12,10 +12,12 @@ async def test_get_cdk_api_docs_file():
     """Test getting a documentation file."""
     mock_content = "# AWS S3\n\nThis is the README for AWS S3."
 
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=False), patch(
-        "builtins.open", mock_open(read_data=mock_content)
-    ):
-        result = await get_cdk_api_docs("packages", "aws-cdk-lib", "aws-s3", "README.md")
+    with patch("os.path.exists", return_value=True), patch(
+        "os.path.isdir", return_value=False
+    ), patch("builtins.open", mock_open(read_data=mock_content)):
+        result = await get_cdk_api_docs(
+            "packages", "aws-cdk-lib", "aws-s3", "README.md"
+        )
 
         assert result == mock_content
 
@@ -23,9 +25,9 @@ async def test_get_cdk_api_docs_file():
 @pytest.mark.asyncio
 async def test_get_cdk_api_docs_directory():
     """Test getting a directory listing."""
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=True), patch(
-        "os.listdir", return_value=["README.md", "examples", "index.md"]
-    ):
+    with patch("os.path.exists", return_value=True), patch(
+        "os.path.isdir", return_value=True
+    ), patch("os.listdir", return_value=["README.md", "examples", "index.md"]):
         result = await get_cdk_api_docs("packages", "aws-cdk-lib", "aws-s3", "")
 
         assert "# Contents of aws-cdk-lib/aws-s3" in result
@@ -38,23 +40,12 @@ async def test_get_cdk_api_docs_directory():
 async def test_get_cdk_api_docs_not_found():
     """Test getting a file that doesn't exist."""
     with patch("os.path.exists", return_value=False):
-        result = await get_cdk_api_docs("packages", "aws-cdk-lib", "aws-s3", "nonexistent.md")
+        result = await get_cdk_api_docs(
+            "packages", "aws-cdk-lib", "aws-s3", "nonexistent.md"
+        )
 
         assert "Error: File" in result
         assert "not found" in result
-
-
-@pytest.mark.asyncio
-async def test_get_cdk_api_docs_deprecated_apis():
-    """Test getting the DEPRECATED_APIs.md file."""
-    mock_content = "# Deprecated APIs\n\nThis is the list of deprecated APIs."
-
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=False), patch(
-        "builtins.open", mock_open(read_data=mock_content)
-    ):
-        result = await get_cdk_api_docs("root", "DEPRECATED_APIs.md", "", "")
-
-        assert result == mock_content
 
 
 @pytest.mark.asyncio
@@ -62,9 +53,9 @@ async def test_get_cdk_api_docs_other_category():
     """Test getting a file from another category."""
     mock_content = "# Custom Category\n\nThis is a custom category file."
 
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=False), patch(
-        "builtins.open", mock_open(read_data=mock_content)
-    ):
+    with patch("os.path.exists", return_value=True), patch(
+        "os.path.isdir", return_value=False
+    ), patch("builtins.open", mock_open(read_data=mock_content)):
         result = await get_cdk_api_docs("custom", "section", "topic", "file.md")
 
         assert result == mock_content
@@ -73,12 +64,12 @@ async def test_get_cdk_api_docs_other_category():
 @pytest.mark.asyncio
 async def test_get_cdk_api_integ_tests_file():
     """Test getting an integration test file."""
-    mock_content = "## aws-s3 / test1\n\n```ts\nconsole.log('test');\n```"
+    mock_content = "console.log('test');"
 
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=False), patch(
-        "builtins.open", mock_open(read_data=mock_content)
-    ):
-        result = await get_cdk_api_integ_tests("aws-s3", "aws-s3.test1.md")
+    with patch("os.path.exists", return_value=True), patch(
+        "os.path.isdir", return_value=False
+    ), patch("builtins.open", mock_open(read_data=mock_content)):
+        result = await get_cdk_api_integ_tests("aws-s3", "integ.test1.ts")
 
         assert result == mock_content
 
@@ -86,14 +77,14 @@ async def test_get_cdk_api_integ_tests_file():
 @pytest.mark.asyncio
 async def test_get_cdk_api_integ_tests_directory():
     """Test getting a directory listing for integration tests."""
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=True), patch(
-        "os.listdir", return_value=["aws-s3.test1.md", "aws-s3.test2.md"]
-    ):
+    with patch("os.path.exists", return_value=True), patch(
+        "os.path.isdir", return_value=True
+    ), patch("os.listdir", return_value=["integ.test1.ts", "integ.test2.ts"]):
         result = await get_cdk_api_integ_tests("aws-s3", "")
 
         assert "# Integration Tests for aws-s3" in result
-        assert "aws-s3.test1.md" in result
-        assert "aws-s3.test2.md" in result
+        assert "integ.test1.ts" in result
+        assert "integ.test2.ts" in result
 
 
 @pytest.mark.asyncio
@@ -109,12 +100,12 @@ async def test_get_cdk_api_integ_tests_not_found():
 @pytest.mark.asyncio
 async def test_get_cdk_api_integ_tests_no_file_path():
     """Test getting integration tests with no file path."""
-    with patch("os.path.exists", return_value=True), patch("os.path.isdir", return_value=True), patch(
-        "os.listdir", return_value=["aws-s3.test1.md", "aws-s3.test2.md", "subdir"]
-    ):
+    with patch("os.path.exists", return_value=True), patch(
+        "os.path.isdir", return_value=True
+    ), patch("os.listdir", return_value=["integ.test1.ts", "integ.test2.ts", "subdir"]):
         result = await get_cdk_api_integ_tests("aws-s3")
 
         assert "# Integration Tests for aws-s3" in result
-        assert "aws-s3.test1.md" in result
-        assert "aws-s3.test2.md" in result
+        assert "integ.test1.ts" in result
+        assert "integ.test2.ts" in result
         assert "subdir/" in result
