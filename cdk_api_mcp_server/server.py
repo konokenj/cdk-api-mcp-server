@@ -48,7 +48,7 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     # 定義済みのパッケージとして直接リソース登録
     @server.resource("cdk-api-docs://constructs/@aws-cdk", mime_type="application/json")
     def get_aws_cdk_alpha_packages():
-        """Get AWS CDK Alpha modules published in @aws-cdk namespace."""
+        """List AWS CDK Alpha modules published in @aws-cdk namespace."""
         content = get_package_content(resource_provider, "@aws-cdk")
 
         # JSONとしてレスポンスを返す
@@ -66,7 +66,7 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
         "cdk-api-docs://constructs/aws-cdk-lib", mime_type="application/json"
     )
     def get_aws_cdk_lib_packages():
-        """Get AWS CDK Stable modules in aws-cdk-lib package."""
+        """List AWS CDK Stable modules in aws-cdk-lib package."""
         content = get_package_content(resource_provider, "aws-cdk-lib")
 
         # JSONとしてレスポンスを返す
@@ -84,8 +84,11 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     @server.resource(
         "cdk-api-docs://constructs/{package_name}/", mime_type="application/json"
     )
+    @server.resource(
+        "cdk-api-docs://constructs/{package_name}", mime_type="application/json"
+    )
     def list_package_modules(package_name: str):
-        """List all modules in a package."""
+        """List all modules in the package."""
         modules = [
             item
             for item in resource_provider.list_resources(f"constructs/{package_name}")
@@ -109,8 +112,12 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
         "cdk-api-docs://constructs/{package_name}/{module_name}/",
         mime_type="application/json",
     )
+    @server.resource(
+        "cdk-api-docs://constructs/{package_name}/{module_name}",
+        mime_type="application/json",
+    )
     def list_module_files(package_name: str, module_name: str):
-        """List all files in a module."""
+        """List all files in the module."""
         files = resource_provider.list_resources(
             f"constructs/{package_name}/{module_name}"
         )
@@ -134,7 +141,7 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
         "cdk-api-docs://constructs/{package_name}/{module_name}/{file_name}"
     )
     def get_construct_file(package_name: str, module_name: str, file_name: str):
-        """Get a file from the constructs directory."""
+        """Get the file content."""
         resource_path = f"constructs/{package_name}/{module_name}/{file_name}"
 
         if not resource_provider.resource_exists(resource_path):
