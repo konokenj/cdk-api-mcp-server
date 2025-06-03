@@ -38,8 +38,18 @@ You MUST run commands to keep code quality, after editing code:
 # Lint and format
 hatch fmt
 
-# Test
+```
+
+## Testing
+
+For integration test, execute `hatch dev:download` before running.
+
+```sh
+# Unit test
 hatch test
+
+# Integration test
+hatch test tests/integration
 ```
 
 ## Coding Python

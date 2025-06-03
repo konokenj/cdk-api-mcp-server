@@ -91,6 +91,7 @@ asyncio_default_fixture_loop_scope = "function"
 # Test Env (Hatch internal)
 ##################################################
 [tool.hatch.envs.hatch-test]
+default-args = ["tests/unit"]
 extra-args = ["-o" , "asyncio_mode=auto"]
 randomize = true
 extra-dependencies = [
