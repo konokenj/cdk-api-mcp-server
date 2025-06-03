@@ -7,6 +7,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,25 +38,17 @@ jobs:
       - name: Build package
         run: hatch build
 
-      - name: Set up Git
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
       - name: Get package version
         id: get_version
         run: echo "version=$(python -c "from cdk_api_mcp_server.__about__ import __version__; print(__version__)")" >> $GITHUB_OUTPUT
 
-      - name: Commit changes
+      - name: Commit and push changes
         run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add .
           git commit -m "Bump version to ${{ steps.get_version.outputs.version }}"
-
-      - name: Create tag
-        run: git tag v${{ steps.get_version.outputs.version }}
-
-      - name: Push changes and tags
-        run: |
+          git tag v${{ steps.get_version.outputs.version }}
           git push
           git push --tags
 
