@@ -258,4 +258,7 @@ $RECYCLE.BIN/
 
 .work/
 .ai-work/
-resources/
+
+# Generated resources
+cdk_api_mcp_server/resources/*
+!cdk_api_mcp_server/resources/.gitkeep

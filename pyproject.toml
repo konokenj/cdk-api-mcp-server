@@ -1,3 +1,6 @@
+##################################################
+# Main Project Environment
+##################################################
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -24,7 +27,17 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+    "fastmcp>=2.0.0",
+    "pydantic>=2.10.6",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy",
+  "PyGithub",
+  "semantic-version"
+]
 
 [project.urls]
 Documentation = "https://github.com/konokenj/cdk-api-mcp-server#readme"
@@ -37,34 +50,16 @@ Source = "https://github.com/konokenj/cdk-api-mcp-server"
 [tool.hatch.version]
 path = "cdk_api_mcp_server/__about__.py"
 
-[tool.hatch.envs.dev]
-extra-dependencies = [
-  "mypy>=1.0.0",
+[tool.hatch.envs.default.scripts]
+server = 'python cdk_api_mcp_server/server.py'
+dev = 'npx @modelcontextprotocol/inspector hatch run python cdk_api_mcp_server/server.py'
+
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "cdk_api_mcp_server/**/*.py",
+  "cdk_api_mcp_server/resources/**/*"
 ]
-
-[tool.hatch.envs.dev.scripts]
-check = "mypy --install-types --non-interactive {args:cdk_api_mcp_server tests}"
-
-[tool.hatch.envs.downloader]
-dependencies = ["PyGithub", "semantic-version"]
-
-[tool.hatch.envs.downloader.scripts]
-download = "python cdk_api_downloader/main.py"
-download-force = "python cdk_api_downloader/main.py --force"
-
-[tool.hatch.envs.test]
-dependencies = [
-  "pytest",
-  "pytest-cov",
-  "pytest-mock",
-]
-
-[tool.hatch.envs.test.scripts]
-test = "pytest {args:tests}"
-test-cov = "pytest --cov {args:tests}"
-
-[[tool.hatch.envs.test.matrix]]
-python = ["3.12"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["cdk_api_mcp_server"]
@@ -88,3 +83,32 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+
+##################################################
+# Test Env (Hatch internal)
+##################################################
+[tool.hatch.envs.hatch-test]
+default-args = ["tests/unit"]
+extra-args = ["-o" , "asyncio_mode=auto"]
+randomize = true
+extra-dependencies = [
+  "fastmcp>=2.0.0",
+  "pydantic>=2.10.6",
+  "PyGithub",
+  "semantic-version",
+  "pytest-asyncio",
+]
+
+##################################################
+# Dev Env
+##################################################
+[tool.hatch.envs.dev]
+features = ["dev"]
+
+[tool.hatch.envs.dev.scripts]
+download = "python cdk_api_downloader/main.py"
+download-force = "python cdk_api_downloader/main.py --force"
+check = "mypy --install-types --non-interactive {args:cdk_api_mcp_server tests}"

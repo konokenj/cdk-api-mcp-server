@@ -2,6 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from .__about__ import __version__
+from cdk_api_mcp_server.__about__ import __version__
 
 __all__ = ["__version__"]
