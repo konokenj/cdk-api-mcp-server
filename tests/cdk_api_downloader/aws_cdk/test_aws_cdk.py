@@ -8,7 +8,7 @@ from cdk_api_downloader.aws_cdk.aws_cdk import (
     find_markdown_files,
     get_module_name,
     get_test_name,
-    surround_with_codeblock,
+    normalize_output_path,
 )
 
 
@@ -17,7 +17,6 @@ def test_find_markdown_files(mocker: MockerFixture):
         "repositories/aws-cdk/packages/@aws-cdk/aws-s3/README.md",
         "repositories/aws-cdk/packages/aws-cdk-lib/aws-lakeformation/README.md",
         "repositories/aws-cdk/packages/aws-cdk-lib/aws-codeartifact/README.md",
-        "repositories/aws-cdk/DEPRECATED_APIs.md",
     ]
 
     # glob.globのモックを設定
@@ -28,8 +27,6 @@ def test_find_markdown_files(mocker: MockerFixture):
             [expected_files[0]],
             # aws-cdk-lib パターン
             [expected_files[1], expected_files[2]],
-            # DEPRECATED_APIs.md パターン
-            [expected_files[3]],
         ],
     )
 
@@ -38,7 +35,6 @@ def test_find_markdown_files(mocker: MockerFixture):
         expected_files[0]: "# AWS S3\nThis is a readme",
         expected_files[1]: "# AWS Lakeformation\nThis is a readme",
         expected_files[2]: "# AWS CodeArtifact\nThis is a readme",
-        expected_files[3]: "# Deprecated APIs\nList of deprecated APIs",
     }
 
     def mock_open_func(file, encoding=None):
@@ -65,8 +61,6 @@ def test_find_markdown_files_excludes_handwritten(mocker: MockerFixture):
             [files[1]],
             # aws-cdk-lib パターン
             [files[0]],
-            # DEPRECATED_APIs.md パターン
-            [],
         ],
     )
 
@@ -120,18 +114,23 @@ def test_get_test_name():
     assert test_name == "rule"
 
 
-def test_surround_with_codeblock():
-    codeblock = surround_with_codeblock(
-        "mymodule", "test1", "console.log('hello world');"
-    )
-    assert (
-        codeblock
-        == """\
-## mymodule / test1
+def test_normalize_output_path():
+    # @aws-cdk パッケージのテスト
+    path = "repositories/aws-cdk/packages/@aws-cdk/aws-s3/README.md"
+    normalized = normalize_output_path(path)
+    assert normalized == "constructs/@aws-cdk/aws-s3/README.md"
 
-```ts
-console.log('hello world');
-```
+    # aws-cdk-lib パッケージのテスト
+    path = "repositories/aws-cdk/packages/aws-cdk-lib/aws-lambda/README.md"
+    normalized = normalize_output_path(path)
+    assert normalized == "constructs/aws-cdk-lib/aws-lambda/README.md"
 
-"""
-    )
+    # integ-test ファイルのテスト
+    path = "repositories/aws-cdk/packages/@aws-cdk-testing/framework-integ/test/aws-config/test/integ.rule.ts"
+    normalized = normalize_output_path(path)
+    assert normalized == "constructs/aws-cdk-lib/aws-config/integ.rule.ts"
+
+    # 不明なパスのテスト
+    path = "repositories/aws-cdk/some/unknown/path/file.md"
+    normalized = normalize_output_path(path)
+    assert normalized == "constructs/unknown/unknown/file.md"

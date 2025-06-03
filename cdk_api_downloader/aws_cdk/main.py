@@ -19,9 +19,7 @@ from github import Github
 from cdk_api_downloader.aws_cdk.aws_cdk import (
     find_integ_test_files,
     find_markdown_files,
-    get_module_name,
-    get_test_name,
-    surround_with_codeblock,
+    normalize_output_path,
 )
 
 # ロガーの設定
@@ -31,7 +29,9 @@ logger = logging.getLogger(__name__)
 REPO_OWNER = "aws"
 REPO_NAME = "aws-cdk"
 REPO_BRANCH = "main"
-GITHUB_DOWNLOAD_URL = f"https://github.com/{REPO_OWNER}/{REPO_NAME}/archive/refs/heads/{REPO_BRANCH}.zip"
+GITHUB_DOWNLOAD_URL = (
+    f"https://github.com/{REPO_OWNER}/{REPO_NAME}/archive/refs/heads/{REPO_BRANCH}.zip"
+)
 
 # Local directories
 WORK_DIR = ".work/aws-cdk"
@@ -88,7 +88,9 @@ def get_current_version_info() -> dict[str, Any]:
         return {}
 
 
-def save_version_info(version: str, timestamp: str, markdown_files: int, integ_test_files: int) -> bool:
+def save_version_info(
+    version: str, timestamp: str, markdown_files: int, integ_test_files: int
+) -> bool:
     """
     Save the processed version information to the version file.
 
@@ -105,7 +107,9 @@ def save_version_info(version: str, timestamp: str, markdown_files: int, integ_t
         os.makedirs(VERSION_DIR, exist_ok=True)
 
         # Current UTC timestamp
-        current_timestamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        current_timestamp = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
 
         version_data = {
             "version": version,
@@ -195,7 +199,9 @@ def is_update_needed() -> tuple[bool, str | None, str | None]:
             return True, latest_version_str, latest_timestamp
     except (ValueError, TypeError):
         # Fall back to string comparison if semantic versioning fails
-        logger.warning("Failed to compare versions semantically, falling back to string comparison")
+        logger.warning(
+            "Failed to compare versions semantically, falling back to string comparison"
+        )
         if latest_version_str != current_version_str:
             return True, latest_version_str, latest_timestamp
 
@@ -302,7 +308,9 @@ def download_github_repo():
                     # Remove the top-level directory from the path
                     if "/" in zip_info.filename:
                         zip_info.filename = "/".join(zip_info.filename.split("/")[1:])
-                        if zip_info.filename:  # Skip the empty path (top-level directory)
+                        if (
+                            zip_info.filename
+                        ):  # Skip the empty path (top-level directory)
                             zip_ref.extract(zip_info, WORK_DIR)
         finally:
             # Clean up the temporary file
@@ -326,8 +334,6 @@ def process_repo_files() -> tuple[bool, int, int]:
     try:
         # Create output directory if it doesn't exist
         os.makedirs(OUT_DIR, exist_ok=True)
-        os.makedirs(f"{OUT_DIR}/docs", exist_ok=True)
-        os.makedirs(f"{OUT_DIR}/integ-tests", exist_ok=True)
 
         # Process markdown files
         markdown_files = list(find_markdown_files(WORK_DIR))
@@ -338,11 +344,15 @@ def process_repo_files() -> tuple[bool, int, int]:
 
     try:
         for file in markdown_files:
-            # remove prefix from source file path
-            dist_path = file.replace(WORK_DIR + "/", "")
-            # copy file to dist with same directory structure
-            os.makedirs(os.path.dirname(f"{OUT_DIR}/docs/{dist_path}"), exist_ok=True)
-            shutil.copy(file, f"{OUT_DIR}/docs/{dist_path}")
+            # 標準化されたパスを取得
+            normalized_path = normalize_output_path(file)
+            output_file = f"{OUT_DIR}/{normalized_path}"
+
+            # 出力先ディレクトリを作成
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+            # ファイルをコピー
+            shutil.copy(file, output_file)
     except OSError:
         logger.exception("Failed to process markdown files")
         return False, 0, 0
@@ -357,14 +367,18 @@ def process_repo_files() -> tuple[bool, int, int]:
 
     try:
         for file in integ_test_files:
-            module_name = get_module_name(file)
-            test_name = get_test_name(file)
+            # 標準化されたパスを取得
+            normalized_path = normalize_output_path(file)
+            output_file = f"{OUT_DIR}/{normalized_path}"
+
+            # 出力先ディレクトリを作成
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+            # ファイル内容を読み込み、そのままコピー
             with open(file) as f:
                 content = f.read()
-                os.makedirs(f"{OUT_DIR}/integ-tests/{module_name}", exist_ok=True)
-                output_file = f"{OUT_DIR}/integ-tests/{module_name}/{module_name}.{test_name}.md"
                 with open(output_file, "w") as out_f:
-                    out_f.write(surround_with_codeblock(module_name, test_name, content))
+                    out_f.write(content)
     except OSError:
         logger.exception("Failed to process integration test files")
         return False, markdown_count, 0
@@ -372,7 +386,9 @@ def process_repo_files() -> tuple[bool, int, int]:
     return True, markdown_count, integ_test_count
 
 
-def check_file_count_decrease(current_info: dict[str, Any], markdown_count: int, integ_test_count: int) -> bool:
+def check_file_count_decrease(
+    current_info: dict[str, Any], markdown_count: int, integ_test_count: int
+) -> bool:
     """
     Check if the number of files has decreased compared to the previous run.
 
@@ -394,7 +410,9 @@ def check_file_count_decrease(current_info: dict[str, Any], markdown_count: int,
     integ_test_decreased = integ_test_count < prev_integ_test
 
     if markdown_decreased:
-        logger.warning("Markdown file count decreased from %d to %d", prev_markdown, markdown_count)
+        logger.warning(
+            "Markdown file count decreased from %d to %d", prev_markdown, markdown_count
+        )
 
     if integ_test_decreased:
         logger.warning(
@@ -454,7 +472,9 @@ def download(*, force: bool = False):
 
         # Step 7: Save the processed version
         if latest_version and latest_timestamp:
-            if not save_version_info(latest_version, latest_timestamp, markdown_count, integ_test_count):
+            if not save_version_info(
+                latest_version, latest_timestamp, markdown_count, integ_test_count
+            ):
                 logger.error("Failed to save version information")
                 return 1
             logger.info(

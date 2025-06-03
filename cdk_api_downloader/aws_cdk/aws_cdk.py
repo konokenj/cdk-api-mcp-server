@@ -13,7 +13,6 @@ def find_markdown_files(basedir: str):
     Include:
         - packages/@aws-cdk/**/*.md
         - packages/aws-cdk-lib/**/*.md
-        - DEPRECATED_APIs.md
     Exclude:
         - cli-regression-patches/
         - *.snapshot/
@@ -26,7 +25,6 @@ def find_markdown_files(basedir: str):
     patterns = [
         f"{basedir}/packages/@aws-cdk/**/*.md",
         f"{basedir}/packages/aws-cdk-lib/**/*.md",
-        f"{basedir}/DEPRECATED_APIs.md",
     ]
 
     for pattern in patterns:
@@ -91,10 +89,40 @@ def get_test_name(path: str):
     return os.path.splitext(path)[0]
 
 
-def surround_with_codeblock(module_name: str, test_name: str, content: str):
+def normalize_output_path(path: str) -> str:
     """
-    Surround with codeblock
+    Normalize output path to have 3 parts structure: constructs/package/module/file
+    e.g. constructs/aws-cdk-lib/aws-s3/README.md
+
     Args:
-        content (str): content to surround with codeblock
+        path (str): original path
+
+    Returns:
+        str: normalized path
     """
-    return f"## {module_name} / {test_name}\n\n```ts\n{content}\n```\n\n"
+    # Remove common prefixes
+    if "packages/@aws-cdk/" in path:
+        # Alpha modules (@aws-cdk namespace)
+        parts = path.split("packages/@aws-cdk/")[1].split("/")
+        package = "@aws-cdk"
+        module = parts[0]
+    elif "packages/aws-cdk-lib/" in path:
+        # Stable modules (aws-cdk-lib package)
+        parts = path.split("packages/aws-cdk-lib/")[1].split("/")
+        package = "aws-cdk-lib"
+        module = parts[0]
+    else:
+        # For integration test files
+        if "framework-integ/test/" in path:
+            module = get_module_name(path)
+            package = "aws-cdk-lib"  # Default to aws-cdk-lib for integration tests
+        else:
+            # Default case for unknown paths
+            package = "unknown"
+            module = "unknown"
+
+    # Get filename
+    filename = os.path.basename(path)
+
+    # Create 3-level directory structure
+    return f"constructs/{package}/{module}/{filename}"
