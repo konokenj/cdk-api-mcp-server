@@ -79,6 +79,9 @@ def main() -> int:
 
     Returns:
         int: Exit code (0 for success, non-zero for failure)
+        When --check flag is used:
+          0: Update is available
+          1: No update is available or error occurred
     """
     parser = argparse.ArgumentParser(description="Download repository data")
 
@@ -92,9 +95,9 @@ def main() -> int:
         help="Repositories to download (default: all available repositories)",
     )
     parser.add_argument(
-        "--force",
+        "--check",
         action="store_true",
-        help="Force download even if the version is already processed",
+        help="Only check if updates are available without downloading",
     )
 
     args = parser.parse_args()
@@ -102,10 +105,33 @@ def main() -> int:
     if not available_repos:
         return 1
 
+    # 更新確認のみのモード
+    if args.check:
+        for repo in args.repos:
+            try:
+                # Import the repository's main module
+                module_path = f"cdk_api_downloader.{repo}.main"
+                module = importlib.import_module(module_path)
+
+                # Call is_update_needed if available
+                if hasattr(module, "is_update_needed"):
+                    update_needed, _, _ = module.is_update_needed()
+                    if update_needed:
+                        logger.info("Updates are available for %s", repo)
+                        return 0  # 更新があれば成功として終了
+                    else:
+                        logger.info("No updates available for %s", repo)
+            except Exception:
+                logger.exception("Error checking updates for %s", repo)
+
+        # すべてのリポジトリで更新がなければ終了コード1で終了
+        return 1
+
+    # 通常のダウンロードモード（常に更新を確認せず実行）
     exit_code = 0
     for repo in args.repos:
-        # 強制フラグを渡す
-        repo_exit_code = download_repo(repo, force=args.force)
+        # 常に強制実行
+        repo_exit_code = download_repo(repo, force=True)
         if repo_exit_code != 0:
             exit_code = repo_exit_code
 

@@ -424,13 +424,11 @@ def check_file_count_decrease(
     return markdown_decreased or integ_test_decreased
 
 
-def download(*, force: bool = False):
+def download():
     """
     Download and process AWS CDK repository data.
     This function can be called from the main download script.
-
-    Args:
-        force (bool): Force download even if the version is already processed
+    Always downloads regardless of whether updates are available.
 
     Returns:
         int: Exit code (0 for success, non-zero for failure)
@@ -439,16 +437,9 @@ def download(*, force: bool = False):
         # Step 1: Get current version info
         current_info = get_current_version_info()
 
-        # Step 2: Check if update is needed
-        update_needed, latest_version, latest_timestamp = is_update_needed()
-
-        if not update_needed and not force:
-            return 0
-
-        if force:
-            # 強制実行時は常に更新が必要と判断
-            logger.info("Force update requested")
-            update_needed = True
+        # Step 2: 常に更新を実行
+        logger.info("Performing download without version check")
+        latest_version, latest_timestamp = get_latest_release_version()
 
         # Step 3: Clean output directories before proceeding
         if not clean_output_directories():
@@ -491,6 +482,26 @@ def download(*, force: bool = False):
         return 0
 
 
+def check_for_updates():
+    """
+    Check if updates are available without downloading.
+
+    Returns:
+        int: Exit code (0 if updates are available, 1 if no updates are available or error occurred)
+    """
+    try:
+        update_needed, latest_version, _ = is_update_needed()
+        if update_needed:
+            logger.info("Updates are available: %s", latest_version)
+            return 0  # 更新があれば成功として終了
+        else:
+            logger.info("No updates available")
+            return 1  # 更新がなければ終了コード1で終了
+    except Exception:
+        logger.exception("Error checking for updates")
+        return 1  # エラーの場合も終了コード1
+
+
 def main():
     """
     Main entry point when script is run directly.
@@ -500,15 +511,17 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Download AWS CDK repository data")
     parser.add_argument(
-        "--force",
+        "--check",
         action="store_true",
-        default=False,
-        help="Force download even if the version is already processed",
+        help="Only check if updates are available without downloading",
     )
 
     args = parser.parse_args()
 
-    return download(force=args.force)
+    if args.check:
+        return check_for_updates()
+    else:
+        return download()
 
 
 if __name__ == "__main__":
