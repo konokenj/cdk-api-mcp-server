@@ -4,7 +4,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from cdk_api_mcp_server.core.resources import get_cdk_api_docs, get_cdk_api_integ_tests
+from cdk_api_mcp_server.resources import get_cdk_api_docs, get_cdk_api_integ_tests
 
 
 @pytest.mark.asyncio

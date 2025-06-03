@@ -111,15 +111,13 @@ def normalize_output_path(path: str) -> str:
         parts = path.split("packages/aws-cdk-lib/")[1].split("/")
         package = "aws-cdk-lib"
         module = parts[0]
+    elif "framework-integ/test/" in path:
+        module = get_module_name(path)
+        package = "aws-cdk-lib"  # Default to aws-cdk-lib for integration tests
     else:
-        # For integration test files
-        if "framework-integ/test/" in path:
-            module = get_module_name(path)
-            package = "aws-cdk-lib"  # Default to aws-cdk-lib for integration tests
-        else:
-            # Default case for unknown paths
-            package = "unknown"
-            module = "unknown"
+        # Default case for unknown paths
+        package = "unknown"
+        module = "unknown"
 
     # Get filename
     filename = os.path.basename(path)

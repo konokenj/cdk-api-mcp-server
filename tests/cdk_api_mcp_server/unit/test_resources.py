@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-from cdk_api_mcp_server.core.resources import (
+from cdk_api_mcp_server.resources import (
     MockResourceProvider,
     PackageResourceProvider,
 )
