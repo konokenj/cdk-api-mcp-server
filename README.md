@@ -5,6 +5,8 @@
 
 ---
 
+Provide AWS CDK API references and integration test code for sample. Can be used in offline because all documents are included in the released python artifact.
+
 ## Usage
 
 Add to your mcp.json:
@@ -32,9 +34,6 @@ Registered as static resources. To get available modules under the package, call
 ### Resource Template: List modules in package
 
 To get available documents under the module, call `read_resource(uri)` as MCP client.
-
-> [!Note]
-> Chagne first and second part of uri as you need.
 
 - `cdk-api-docs://constructs/@aws-cdk/{module}`
 - `cdk-api-docs://constructs/aws-cdk-lib/{module}`
