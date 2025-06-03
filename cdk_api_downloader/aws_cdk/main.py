@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 from urllib.request import urlopen
 
-import semantic_version
+import semantic_version  # type: ignore
 from github import Github
 
 from cdk_api_downloader.aws_cdk.aws_cdk import (

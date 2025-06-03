@@ -11,6 +11,7 @@
 - `dev` environment is for `cdk_api_downloader` and development.
 - To add dependencies, edit pyproject.toml. `hatch` manages dependencies automatically.
 - Do not run `python` or `pip` commands without `hatch`. You have to run python scripts or tasks via `hatch` command to access proper dependencies.
+- Use Python interpreter in `hatch-test` environment for IDEs.
 
 ## Run debug server for human developers
 

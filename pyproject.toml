@@ -96,6 +96,8 @@ randomize = true
 extra-dependencies = [
   "fastmcp>=2.0.0",
   "pydantic>=2.10.6",
+  "PyGithub",
+  "semantic-version",
   "pytest-asyncio",
 ]
 
