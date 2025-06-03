@@ -53,16 +53,19 @@ path = "cdk_api_mcp_server/__about__.py"
 [tool.hatch.envs.default.scripts]
 server = 'python cdk_api_mcp_server/server.py'
 dev = 'npx @modelcontextprotocol/inspector hatch run python cdk_api_mcp_server/server.py'
+debug-package = 'npx @modelcontextprotocol/inspector uvx konokenj.cdk-api-mcp-server'
 
 
 [tool.hatch.build.targets.sdist]
 include = [
   "cdk_api_mcp_server/**/*.py",
-  "cdk_api_mcp_server/resources/**/*"
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["cdk_api_mcp_server"]
+artifacts = [
+  "cdk_api_mcp_server/resources/**/*"
+]
 
 [tool.coverage.run]
 source_pkgs = ["cdk_api_mcp_server", "cdk_api_downloader", "tests"]
