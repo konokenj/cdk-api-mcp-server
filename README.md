@@ -36,8 +36,8 @@ To get available documents under the module, call `read_resource(uri)` as MCP cl
 > [!Note]
 > Chagne first and second part of uri as you need.
 
-- `cdk-api-docs://constructs/@aws-cdk/{module}/`
-- `cdk-api-docs://constructs/aws-cdk-lib/{module}/`
+- `cdk-api-docs://constructs/@aws-cdk/{module}`
+- `cdk-api-docs://constructs/aws-cdk-lib/{module}`
 
 ### Resource Template: Read file contents
 

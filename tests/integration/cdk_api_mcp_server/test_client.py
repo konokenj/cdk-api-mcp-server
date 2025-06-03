@@ -133,7 +133,7 @@ async def test_client_list_modules(server: FastMCP):
     async with client:
         # aws-cdk-libパッケージ内のモジュール一覧を取得
         resource_contents = await client.read_resource(
-            "cdk-api-docs://constructs/aws-cdk-lib/"
+            "cdk-api-docs://constructs/aws-cdk-lib"
         )
 
         # リソースが取得できることを確認
@@ -165,7 +165,7 @@ async def test_client_list_module_files(server: FastMCP):
     async with client:
         # aws-cdk-lib/aws-s3モジュール内のファイル一覧を取得
         resource_contents = await client.read_resource(
-            "cdk-api-docs://constructs/aws-cdk-lib/aws-s3/"
+            "cdk-api-docs://constructs/aws-cdk-lib/aws-s3"
         )
 
         # リソースが取得できることを確認

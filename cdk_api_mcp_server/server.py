@@ -7,6 +7,7 @@ from typing import Optional
 
 from fastmcp import FastMCP
 from fastmcp.resources import TextResource
+from mcp.shared.exceptions import ErrorData, McpError
 from pydantic import AnyUrl
 
 from cdk_api_mcp_server.resources import (
@@ -42,8 +43,8 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     # 新しいサーバーインスタンスを作成
     server: FastMCP = FastMCP()
 
-    # nameフィールドにアクセスする方法は提供されていないため、descriptionを使う
-    server.description = "AWS CDK API MCP Server"
+    # 説明はコメントで残しておく
+    # "AWS CDK API MCP Server"
 
     # 定義済みのパッケージとして直接リソース登録
     @server.resource("cdk-api-docs://constructs/@aws-cdk", mime_type="application/json")
@@ -86,6 +87,11 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     )
     def list_package_modules(package_name: str):
         """List all modules in the package."""
+        # パッケージが存在するか確認
+        if not resource_provider.resource_exists(f"constructs/{package_name}"):
+            error_message = f"Unknown resource: package '{package_name}' not found"
+            raise McpError(ErrorData(message=error_message, code=404))
+
         modules = [
             item
             for item in resource_provider.list_resources(f"constructs/{package_name}")
@@ -111,9 +117,14 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     )
     def list_module_files(package_name: str, module_name: str):
         """List all files in the module."""
-        files = resource_provider.list_resources(
-            f"constructs/{package_name}/{module_name}"
-        )
+        resource_path = f"constructs/{package_name}/{module_name}"
+
+        # モジュールが存在するか確認
+        if not resource_provider.resource_exists(resource_path):
+            error_message = f"Unknown resource: module '{resource_path}' not found"
+            raise McpError(ErrorData(message=error_message, code=404))
+
+        files = resource_provider.list_resources(resource_path)
         content = json.dumps(files)
 
         # JSONとしてレスポンスを返す
@@ -138,18 +149,8 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
         resource_path = f"constructs/{package_name}/{module_name}/{file_name}"
 
         if not resource_provider.resource_exists(resource_path):
-            error_message = f"Error: File '{resource_path}' not found"
-            return TextResource(
-                uri=AnyUrl.build(
-                    scheme="cdk-api-docs",
-                    host="constructs",
-                    path=f"/{package_name}/{module_name}/{file_name}",
-                ),
-                name=file_name,
-                text=error_message,
-                description=f"Error: {resource_path}",
-                mime_type="text/plain",
-            )
+            error_message = f"Unknown resource: '{resource_path}' not found"
+            raise McpError(ErrorData(message=error_message, code=404))
 
         # リソースプロバイダーからコンテンツを取得
         content = resource_provider.get_resource_content(resource_path)
@@ -169,10 +170,9 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
             description = f"JSON file: {package_name}/{module_name}/{file_name}"
         else:
             # その他の場合はmimetypesモジュールで判定
-            mime_type, _ = mimetypes.guess_type(file_name)
-            if mime_type is None:
-                # デフォルトはプレーンテキスト
-                mime_type = "text/plain"
+            mime_type_guess, _ = mimetypes.guess_type(file_name)
+            # None の場合はデフォルトのtext/plainを使用
+            mime_type = mime_type_guess if mime_type_guess is not None else "text/plain"
             description = f"File: {package_name}/{module_name}/{file_name}"
 
         # Create and return a TextResource
