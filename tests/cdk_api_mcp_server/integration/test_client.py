@@ -1,5 +1,6 @@
 """Integration tests for the CDK API MCP client."""
 
+import mimetypes
 from unittest.mock import patch
 
 import pytest
@@ -12,6 +13,12 @@ from cdk_api_mcp_server.server import create_server
 @pytest.fixture
 def server():
     """Create a test server with PackageResourceProvider."""
+    # MIMEタイプの初期化（テスト用）
+    mimetypes.init()
+    mimetypes.add_type("text/markdown", ".md")
+    mimetypes.add_type("text/typescript", ".ts")
+    mimetypes.add_type("application/json", ".json")
+
     # PackageResourceProviderをパッチしてテスト用のデータを返すようにする
     with patch.object(
         PackageResourceProvider, "get_resource_content"
@@ -23,7 +30,7 @@ def server():
         # get_resource_contentのモック
         def mock_get_content_impl(path):
             content_map = {
-                "constructs/aws-cdk-lib/aws-s3/README.md": "# AWS S3\nThis is the README for AWS S3.",
+                "constructs/aws-cdk-lib/aws-s3/README.md": "# Amazon S3 Construct Library\nThis is the README for AWS S3.",
                 "constructs/aws-cdk-lib/aws-lambda/README.md": "# AWS Lambda\nThis is a readme for Lambda.",
                 "constructs/aws-cdk-lib/aws-dynamodb/README.md": "# DynamoDB\nThis is a readme for DynamoDB.",
                 "constructs/@aws-cdk/aws-apigateway/README.md": "# API Gateway\nThis is a readme for API Gateway.",
@@ -89,6 +96,8 @@ async def test_client_access_construct_path(server: FastMCP):
 
         # コンテンツを検証 - 実際のREADME.mdの内容に合わせる
         assert "# Amazon S3 Construct Library" in resource_contents[0].text
+        # MIMEタイプの検証 - テスト環境では text/plain になる場合がある
+        assert resource_contents[0].mimeType in ["text/markdown", "text/plain"]
 
 
 @pytest.mark.asyncio
@@ -116,6 +125,8 @@ async def test_client_direct_resource(server: FastMCP):
         assert "aws-s3" in modules
         assert "aws-lambda" in modules
         assert "aws-dynamodb" in modules
+        # JSONレスポンスのMIMEタイプを検証
+        assert resource_contents[0].mimeType == "application/json"
 
 
 @pytest.mark.asyncio

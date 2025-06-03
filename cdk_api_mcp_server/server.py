@@ -1,6 +1,8 @@
 """AWS CDK API MCP server implementation."""
 
 import json
+import mimetypes
+import os
 from typing import Optional
 
 from fastmcp import FastMCP
@@ -12,6 +14,12 @@ from cdk_api_mcp_server.resources import (
     ResourceProvider,
     get_package_content,
 )
+
+# MIMEタイプの初期化と追加
+mimetypes.init()
+mimetypes.add_type("text/markdown", ".md")
+mimetypes.add_type("text/typescript", ".ts")
+mimetypes.add_type("application/json", ".json")
 
 # デフォルトのMCPサーバーインスタンス
 mcp: FastMCP = FastMCP()
@@ -38,18 +46,44 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     server.description = "AWS CDK API MCP Server"
 
     # 定義済みのパッケージとして直接リソース登録
-    @server.resource("cdk-api-docs://constructs/@aws-cdk")
+    @server.resource("cdk-api-docs://constructs/@aws-cdk", mime_type="application/json")
     def get_aws_cdk_alpha_packages():
         """Get AWS CDK Alpha modules published in @aws-cdk namespace."""
-        return get_package_content(resource_provider, "@aws-cdk")
+        content = get_package_content(resource_provider, "@aws-cdk")
 
-    @server.resource("cdk-api-docs://constructs/aws-cdk-lib")
+        # JSONとしてレスポンスを返す
+        return TextResource(
+            uri=AnyUrl.build(
+                scheme="cdk-api-docs", host="constructs", path="/@aws-cdk"
+            ),
+            name="@aws-cdk",
+            text=content,
+            description="AWS CDK Alpha modules",
+            mime_type="application/json",  # JSONレスポンスのMIMEタイプを設定
+        )
+
+    @server.resource(
+        "cdk-api-docs://constructs/aws-cdk-lib", mime_type="application/json"
+    )
     def get_aws_cdk_lib_packages():
         """Get AWS CDK Stable modules in aws-cdk-lib package."""
-        return get_package_content(resource_provider, "aws-cdk-lib")
+        content = get_package_content(resource_provider, "aws-cdk-lib")
+
+        # JSONとしてレスポンスを返す
+        return TextResource(
+            uri=AnyUrl.build(
+                scheme="cdk-api-docs", host="constructs", path="/aws-cdk-lib"
+            ),
+            name="aws-cdk-lib",
+            text=content,
+            description="AWS CDK Stable modules",
+            mime_type="application/json",  # JSONレスポンスのMIMEタイプを設定
+        )
 
     # リソーステンプレート：パッケージ内のモジュール一覧
-    @server.resource("cdk-api-docs://constructs/{package_name}/")
+    @server.resource(
+        "cdk-api-docs://constructs/{package_name}/", mime_type="application/json"
+    )
     def list_package_modules(package_name: str):
         """List all modules in a package."""
         modules = [
@@ -57,18 +91,45 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
             for item in resource_provider.list_resources(f"constructs/{package_name}")
             if resource_provider.resource_exists(f"constructs/{package_name}/{item}/")
         ]
-        return json.dumps(modules)
+        content = json.dumps(modules)
+
+        # JSONとしてレスポンスを返す
+        return TextResource(
+            uri=AnyUrl.build(
+                scheme="cdk-api-docs", host="constructs", path=f"/{package_name}/"
+            ),
+            name=f"{package_name}-modules",
+            text=content,
+            description=f"Modules in {package_name}",
+            mime_type="application/json",  # JSONレスポンスのMIMEタイプを設定
+        )
 
     # リソーステンプレート：モジュール内のファイル一覧
-    @server.resource("cdk-api-docs://constructs/{package_name}/{module_name}/")
+    @server.resource(
+        "cdk-api-docs://constructs/{package_name}/{module_name}/",
+        mime_type="application/json",
+    )
     def list_module_files(package_name: str, module_name: str):
         """List all files in a module."""
         files = resource_provider.list_resources(
             f"constructs/{package_name}/{module_name}"
         )
-        return json.dumps(files)
+        content = json.dumps(files)
 
-    # リソーステンプレート：ファイルの内容を読み込む
+        # JSONとしてレスポンスを返す
+        return TextResource(
+            uri=AnyUrl.build(
+                scheme="cdk-api-docs",
+                host="constructs",
+                path=f"/{package_name}/{module_name}/",
+            ),
+            name=f"{module_name}-files",
+            text=content,
+            description=f"Files in {package_name}/{module_name}",
+            mime_type="application/json",  # JSONレスポンスのMIMEタイプを設定
+        )
+
+    # リソーステンプレート：すべてのファイルタイプ対応
     @server.resource(
         "cdk-api-docs://constructs/{package_name}/{module_name}/{file_name}"
     )
@@ -77,10 +138,42 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
         resource_path = f"constructs/{package_name}/{module_name}/{file_name}"
 
         if not resource_provider.resource_exists(resource_path):
-            return f"Error: File '{resource_path}' not found"
+            error_message = f"Error: File '{resource_path}' not found"
+            return TextResource(
+                uri=AnyUrl.build(
+                    scheme="cdk-api-docs",
+                    host="constructs",
+                    path=f"/{package_name}/{module_name}/{file_name}",
+                ),
+                name=file_name,
+                text=error_message,
+                description=f"Error: {resource_path}",
+                mime_type="text/plain",
+            )
 
         # リソースプロバイダーからコンテンツを取得
         content = resource_provider.get_resource_content(resource_path)
+
+        # 拡張子に基づいてMIMEタイプを決定
+        _, ext = os.path.splitext(file_name)
+
+        # 特定の拡張子に対して明示的にMIMEタイプを設定
+        if ext == ".md":
+            mime_type = "text/markdown"
+            description = f"Markdown file: {package_name}/{module_name}/{file_name}"
+        elif ext == ".ts":
+            mime_type = "text/typescript"
+            description = f"TypeScript file: {package_name}/{module_name}/{file_name}"
+        elif ext == ".json":
+            mime_type = "application/json"
+            description = f"JSON file: {package_name}/{module_name}/{file_name}"
+        else:
+            # その他の場合はmimetypesモジュールで判定
+            mime_type, _ = mimetypes.guess_type(file_name)
+            if mime_type is None:
+                # デフォルトはプレーンテキスト
+                mime_type = "text/plain"
+            description = f"File: {package_name}/{module_name}/{file_name}"
 
         # Create and return a TextResource
         return TextResource(
@@ -91,8 +184,8 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
             ),
             name=file_name,
             text=content,
-            description=f"Construct file: {package_name}/{module_name}/{file_name}",
-            mime_type="text/markdown" if file_name.endswith(".md") else "text/plain",
+            description=description,
+            mime_type=mime_type,
         )
 
     return server
