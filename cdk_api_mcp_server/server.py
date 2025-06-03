@@ -1,13 +1,12 @@
 """AWS CDK API MCP server implementation."""
 
 import json
-from typing import List, Optional
+from typing import Optional
 
 from fastmcp import FastMCP
 from fastmcp.resources import TextResource
 from pydantic import AnyUrl
 
-from cdk_api_mcp_server.models import FileItem, FileList
 from cdk_api_mcp_server.resources import (
     PackageResourceProvider,
     ResourceProvider,
@@ -15,7 +14,7 @@ from cdk_api_mcp_server.resources import (
 )
 
 # デフォルトのMCPサーバーインスタンス
-mcp: FastMCP = FastMCP("AWS CDK API MCP Server", dependencies=[])
+mcp: FastMCP = FastMCP()
 # デフォルトのリソースプロバイダー
 _default_provider = PackageResourceProvider()
 
@@ -33,7 +32,10 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     resource_provider = provider or _default_provider
 
     # 新しいサーバーインスタンスを作成
-    server: FastMCP = FastMCP("AWS CDK API MCP Server", dependencies=[])
+    server: FastMCP = FastMCP()
+
+    # nameフィールドにアクセスする方法は提供されていないため、descriptionを使う
+    server.description = "AWS CDK API MCP Server"
 
     # 定義済みのパッケージとして直接リソース登録
     @server.resource("cdk-api-docs://constructs/@aws-cdk")
@@ -50,55 +52,21 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
     @server.resource("cdk-api-docs://constructs/{package_name}/")
     def list_package_modules(package_name: str):
         """List all modules in a package."""
-        files: List[FileItem] = []
-        for item in resource_provider.list_resources(f"constructs/{package_name}"):
-            if resource_provider.resource_exists(f"constructs/{package_name}/{item}/"):
-                # AnyUrlを文字列として変換してからFileItemに設定
-                uri_str = str(
-                    AnyUrl.build(
-                        scheme="cdk-api-docs",
-                        host="constructs",
-                        path=f"/{package_name}/{item}/",
-                    )
-                )
-                files.append(
-                    FileItem(
-                        name=item,
-                        uri=uri_str,
-                        is_directory=True,
-                    )
-                )
-
-        return json.dumps(FileList(files=files).model_dump())
+        modules = [
+            item
+            for item in resource_provider.list_resources(f"constructs/{package_name}")
+            if resource_provider.resource_exists(f"constructs/{package_name}/{item}/")
+        ]
+        return json.dumps(modules)
 
     # リソーステンプレート：モジュール内のファイル一覧
     @server.resource("cdk-api-docs://constructs/{package_name}/{module_name}/")
     def list_module_files(package_name: str, module_name: str):
         """List all files in a module."""
-        files: List[FileItem] = []
-        for item in resource_provider.list_resources(
+        files = resource_provider.list_resources(
             f"constructs/{package_name}/{module_name}"
-        ):
-            is_dir = resource_provider.resource_exists(
-                f"constructs/{package_name}/{module_name}/{item}/"
-            )
-            # AnyUrlを文字列として変換
-            uri_str = str(
-                AnyUrl.build(
-                    scheme="cdk-api-docs",
-                    host="constructs",
-                    path=f"/{package_name}/{module_name}/{item}{'/' if is_dir else ''}",
-                )
-            )
-            files.append(
-                FileItem(
-                    name=item,
-                    uri=uri_str,
-                    is_directory=is_dir,
-                )
-            )
-
-        return json.dumps(FileList(files=files).model_dump())
+        )
+        return json.dumps(files)
 
     # リソーステンプレート：ファイルの内容を読み込む
     @server.resource(
@@ -136,7 +104,7 @@ def initialize_default_server() -> None:
     global mcp
     default_server = create_server(_default_provider)
     # 以前のmcpの属性を新しいサーバーにコピー
-    mcp.__dict__ = default_server.__dict__
+    mcp.__dict__.update(default_server.__dict__)
 
 
 # デフォルトサーバーを初期化
@@ -145,6 +113,9 @@ initialize_default_server()
 
 def main():
     """Run the MCP server."""
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
     # サーバーを実行
     mcp.run()
 

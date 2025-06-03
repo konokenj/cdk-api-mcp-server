@@ -1,111 +1,67 @@
 """Tests for the CDK API MCP server resources."""
 
-from unittest.mock import mock_open, patch
+from unittest.mock import patch
 
-import pytest
-
-from cdk_api_mcp_server.resources import get_cdk_api_docs, get_cdk_api_integ_tests
+from cdk_api_mcp_server.resources import PackageResourceProvider
 
 
-@pytest.mark.asyncio
-async def test_get_cdk_api_docs_file():
-    """Test getting a documentation file."""
-    mock_content = "# AWS S3\n\nThis is the README for AWS S3."
+def test_package_resource_provider_get_content():
+    """Test retrieving content from the package provider."""
+    provider = PackageResourceProvider()
 
-    with patch("os.path.exists", return_value=True), patch(
-        "os.path.isdir", return_value=False
-    ), patch("builtins.open", mock_open(read_data=mock_content)):
-        result = await get_cdk_api_docs(
-            "packages", "aws-cdk-lib", "aws-s3", "README.md"
-        )
+    # ファイル内容の取得テスト - 実際のファイルを使用
+    result = provider.get_resource_content("constructs/aws-cdk-lib/aws-s3/README.md")
+    assert "# Amazon S3 Construct Library" in result
 
-        assert result == mock_content
-
-
-@pytest.mark.asyncio
-async def test_get_cdk_api_docs_directory():
-    """Test getting a directory listing."""
-    with patch("os.path.exists", return_value=True), patch(
-        "os.path.isdir", return_value=True
-    ), patch("os.listdir", return_value=["README.md", "examples", "index.md"]):
-        result = await get_cdk_api_docs("packages", "aws-cdk-lib", "aws-s3", "")
-
-        assert "# Contents of aws-cdk-lib/aws-s3" in result
-        assert "README.md" in result
-        assert "examples/" in result
-        assert "index.md" in result
+    # 存在しないファイル取得テスト
+    result = provider.get_resource_content(
+        "constructs/aws-cdk-lib/aws-s3/nonexistent.md"
+    )
+    assert "Error: Resource" in result
+    assert "not found" in result
 
 
-@pytest.mark.asyncio
-async def test_get_cdk_api_docs_not_found():
-    """Test getting a file that doesn't exist."""
-    with patch("os.path.exists", return_value=False):
-        result = await get_cdk_api_docs(
-            "packages", "aws-cdk-lib", "aws-s3", "nonexistent.md"
-        )
+def test_package_resource_provider_list_resources():
+    """Test listing resources from the package provider."""
+    provider = PackageResourceProvider()
 
-        assert "Error: File" in result
-        assert "not found" in result
-
-
-@pytest.mark.asyncio
-async def test_get_cdk_api_docs_other_category():
-    """Test getting a file from another category."""
-    mock_content = "# Custom Category\n\nThis is a custom category file."
-
-    with patch("os.path.exists", return_value=True), patch(
-        "os.path.isdir", return_value=False
-    ), patch("builtins.open", mock_open(read_data=mock_content)):
-        result = await get_cdk_api_docs("custom", "section", "topic", "file.md")
-
-        assert result == mock_content
+    # リソース一覧取得テスト - 実際のファイルを使用
+    result = provider.list_resources("constructs/aws-cdk-lib/aws-s3")
+    assert (
+        "README.md" in result
+    )  # 実際のファイルシステムにはREADME.mdが含まれているはず
 
 
-@pytest.mark.asyncio
-async def test_get_cdk_api_integ_tests_file():
-    """Test getting an integration test file."""
-    mock_content = "console.log('test');"
+@patch("importlib.resources.contents")
+@patch("importlib.resources.is_resource")
+def test_package_resource_provider_resource_exists(mock_is_resource, mock_contents):
+    """Test checking if resources exist in the package provider."""
+    # モックの設定
+    mock_contents.return_value = ["README.md", "examples"]
+    mock_is_resource.return_value = True
 
-    with patch("os.path.exists", return_value=True), patch(
-        "os.path.isdir", return_value=False
-    ), patch("builtins.open", mock_open(read_data=mock_content)):
-        result = await get_cdk_api_integ_tests("aws-s3", "integ.test1.ts")
+    provider = PackageResourceProvider()
 
-        assert result == mock_content
+    # 存在するディレクトリのチェック
+    mock_contents.side_effect = None
+    assert provider.resource_exists("constructs/aws-cdk-lib/aws-s3") is True
 
+    # 存在するファイルのチェック
+    assert provider.resource_exists("constructs/aws-cdk-lib/aws-s3/README.md") is True
 
-@pytest.mark.asyncio
-async def test_get_cdk_api_integ_tests_directory():
-    """Test getting a directory listing for integration tests."""
-    with patch("os.path.exists", return_value=True), patch(
-        "os.path.isdir", return_value=True
-    ), patch("os.listdir", return_value=["integ.test1.ts", "integ.test2.ts"]):
-        result = await get_cdk_api_integ_tests("aws-s3", "")
-
-        assert "# Integration Tests for aws-s3" in result
-        assert "integ.test1.ts" in result
-        assert "integ.test2.ts" in result
+    # 存在しないパスのチェック
+    mock_contents.side_effect = ModuleNotFoundError("Module not found")
+    mock_is_resource.return_value = False
+    assert provider.resource_exists("constructs/nonexistent") is False
 
 
-@pytest.mark.asyncio
-async def test_get_cdk_api_integ_tests_not_found():
-    """Test getting an integration test file that doesn't exist."""
-    with patch("os.path.exists", return_value=False):
-        result = await get_cdk_api_integ_tests("aws-s3", "nonexistent.md")
+def test_package_resource_provider_directory_content():
+    """Test retrieving directory content from the package provider."""
+    provider = PackageResourceProvider()
 
-        assert "Error: File" in result
-        assert "not found" in result
-
-
-@pytest.mark.asyncio
-async def test_get_cdk_api_integ_tests_no_file_path():
-    """Test getting integration tests with no file path."""
-    with patch("os.path.exists", return_value=True), patch(
-        "os.path.isdir", return_value=True
-    ), patch("os.listdir", return_value=["integ.test1.ts", "integ.test2.ts", "subdir"]):
-        result = await get_cdk_api_integ_tests("aws-s3")
-
-        assert "# Integration Tests for aws-s3" in result
-        assert "integ.test1.ts" in result
-        assert "integ.test2.ts" in result
-        assert "subdir/" in result
+    # ディレクトリ内容の取得テスト - ディレクトリパスとして扱う - 実際のファイルシステムを使用
+    result = provider.get_resource_content("constructs/aws-cdk-lib/aws-s3")
+    assert "Directory" in result
+    assert (
+        "README.md" in result
+    )  # 実際のファイルシステムにはREADME.mdが含まれているはず
