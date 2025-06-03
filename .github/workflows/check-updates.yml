@@ -28,9 +28,7 @@ jobs:
           hatch run dev:check-updates
           exit_code=$?
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
-          if [[ $exit_code != 0 && $exit_code != 1 ]]; then
-            exit 1
-          fi
+        continue-on-error: true
 
       - name: Trigger release workflow
         if: steps.check.outputs.exit_code == '0'
