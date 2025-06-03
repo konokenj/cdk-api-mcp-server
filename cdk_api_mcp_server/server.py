@@ -82,9 +82,6 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
 
     # リソーステンプレート：パッケージ内のモジュール一覧
     @server.resource(
-        "cdk-api-docs://constructs/{package_name}/", mime_type="application/json"
-    )
-    @server.resource(
         "cdk-api-docs://constructs/{package_name}", mime_type="application/json"
     )
     def list_package_modules(package_name: str):
@@ -108,10 +105,6 @@ def create_server(provider: Optional[ResourceProvider] = None) -> FastMCP:
         )
 
     # リソーステンプレート：モジュール内のファイル一覧
-    @server.resource(
-        "cdk-api-docs://constructs/{package_name}/{module_name}/",
-        mime_type="application/json",
-    )
     @server.resource(
         "cdk-api-docs://constructs/{package_name}/{module_name}",
         mime_type="application/json",
