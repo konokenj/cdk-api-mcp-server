@@ -108,4 +108,4 @@ features = ["dev"]
 [tool.hatch.envs.dev.scripts]
 download = "python cdk_api_downloader/main.py"
 check-updates = "python cdk_api_downloader/main.py --check"
-check = "mypy --install-types --non-interactive {args:cdk_api_mcp_server tests}"
+typecheck = "mypy --install-types --non-interactive {args:cdk_api_mcp_server tests}"
