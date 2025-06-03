@@ -10,6 +10,9 @@ jobs:
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
       contents: write # For git push
+    environment:
+      name: pypi
+      url: https://pypi.org/p/konokenj.cdk-api-mcp-server
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
