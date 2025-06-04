@@ -54,22 +54,32 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add .
-          git commit -m "Bump version to ${{ steps.get_version.outputs.version }}"
 
-          # バージョン情報を収集
+          # バージョン情報とバッジ情報を同時に収集
           VERSION_INFO=""
+          BADGES=""
           for file in current-versions/*.txt; do
             # ファイル名から.txtを除いた名前を取得
             LIB_NAME=$(basename "$file" .txt)
             # JSONファイルからバージョンを抽出
             VERSION=$(cat "$file" | jq -r '.version')
-            # バージョン情報を追加
+
+            # バージョン情報を追加（リリースノート用）
             VERSION_INFO="${VERSION_INFO}${LIB_NAME}: ${VERSION}\n"
+
+            # バッジを生成（README用）
+            BADGE="[![${LIB_NAME}](https://img.shields.io/badge/${LIB_NAME/-/%20}-${VERSION}-blue.svg)](https://github.com/konokenj/cdk-api-mcp-server/blob/main/current-versions/${LIB_NAME}.txt)"
+            BADGES="${BADGES}${BADGE}\n"
           done
 
+          # READMEを更新
+          sed -i "s|<!-- DEP-VERSIONS-START -->.*<!-- DEP-VERSIONS-END -->|<!-- DEP-VERSIONS-START -->\n${BADGES}<!-- DEP-VERSIONS-END -->|" README.md
+
+          git add .
+          git commit -m "Bump version to ${{ steps.get_version.outputs.version }}"
+
           # タグをメッセージ付きで作成
-          git tag -m "Release v${{ steps.get_version.outputs.version }}\n\nIncluded documentations:\n${VERSION_INFO}" v${{ steps.get_version.outputs.version }}
+          git tag -m "Release v${{ steps.get_version.outputs.version }}\n\nDependency Library Information:\n${VERSION_INFO}" v${{ steps.get_version.outputs.version }}
 
           git push
           git push --tags

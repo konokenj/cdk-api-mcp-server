@@ -3,6 +3,9 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/konokenj.cdk-api-mcp-server.svg)](https://pypi.org/project/konokenj.cdk-api-mcp-server)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/konokenj.cdk-api-mcp-server.svg)](https://pypi.org/project/konokenj.cdk-api-mcp-server)
 
+<!-- DEP-VERSIONS-START -->
+<!-- DEP-VERSIONS-END -->
+
 ---
 
 Provide AWS CDK API references and integration test code for sample. Can be used in offline because all documents are included in the released python artifact.
