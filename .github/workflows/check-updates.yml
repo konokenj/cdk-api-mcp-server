@@ -8,7 +8,7 @@ jobs:
   check-updates:
     runs-on: ubuntu-latest
     outputs:
-      exit_code: ${{ steps.check.outputs.exit_code }}
+      result: ${{ steps.check.outputs.result }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,9 +27,8 @@ jobs:
       - name: Check for updates
         id: check
         run: |
-          hatch run dev:check-updates
-          exit_code=$?
-          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          result=$(hatch run dev:check-updates)
+          echo "result=$result" >> $GITHUB_OUTPUT
         continue-on-error: true
 
   # NOTE: Release steps must be defined static instead of re-usable workflow
@@ -39,7 +38,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: check-updates
-    if: ${{ needs.check-updates.outputs.exit_code == '0' }}
+    if: ${{ fromJson(needs.check-updates.outputs.result)['update-required'] == true }}
     permissions:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
       contents: write # For git push
