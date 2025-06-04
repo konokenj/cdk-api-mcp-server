@@ -56,7 +56,21 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add .
           git commit -m "Bump version to ${{ steps.get_version.outputs.version }}"
-          git tag v${{ steps.get_version.outputs.version }}
+
+          # バージョン情報を収集
+          VERSION_INFO=""
+          for file in current-versions/*.txt; do
+            # ファイル名から.txtを除いた名前を取得
+            LIB_NAME=$(basename "$file" .txt)
+            # JSONファイルからバージョンを抽出
+            VERSION=$(cat "$file" | jq -r '.version')
+            # バージョン情報を追加
+            VERSION_INFO="${VERSION_INFO}${LIB_NAME}: ${VERSION}\n"
+          done
+
+          # タグをメッセージ付きで作成
+          git tag -m "Release v${{ steps.get_version.outputs.version }}\n\nIncluded documentations:\n${VERSION_INFO}" v${{ steps.get_version.outputs.version }}
+
           git push
           git push --tags
 
