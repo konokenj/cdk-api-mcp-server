@@ -83,6 +83,7 @@ jobs:
 
           # バージョン情報とバッジ情報を同時に収集
           VERSION_INFO=""
+          SEPARATOR=""
           BADGES=""
           for file in current-versions/*.txt; do
             # ファイル名から.txtを除いた名前を取得
@@ -90,8 +91,9 @@ jobs:
             # JSONファイルからバージョンを抽出
             VERSION=$(cat "$file" | jq -r '.version')
 
-            # バージョン情報を追加（リリースノート用）
-            VERSION_INFO="${VERSION_INFO}${LIB_NAME}: ${VERSION}\n"
+            # バージョン情報を追加（リリースノート用、カンマ区切り）
+            VERSION_INFO="${VERSION_INFO}${SEPARATOR}${LIB_NAME} v${VERSION}"
+            SEPARATOR=", "
 
             # バッジを生成（README用）
             BADGE="[![${LIB_NAME}](https://img.shields.io/badge/${LIB_NAME/-/%20}-${VERSION}-blue.svg)](https://github.com/konokenj/cdk-api-mcp-server/blob/main/current-versions/${LIB_NAME}.txt)"
@@ -104,8 +106,8 @@ jobs:
           git add .
           git commit -m "Bump version to ${{ steps.get_version.outputs.version }}"
 
-          # タグをメッセージ付きで作成
-          git tag -m "Release v${{ steps.get_version.outputs.version }}\n\nDependency Library Information:\n${VERSION_INFO}" v${{ steps.get_version.outputs.version }}
+          # タグをメッセージ付きで作成（カンマ区切り1行）
+          git tag -m "Included libraries: ${VERSION_INFO}" v${{ steps.get_version.outputs.version }}
 
           git push
           git push --tags
