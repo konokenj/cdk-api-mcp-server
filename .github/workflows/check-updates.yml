@@ -101,7 +101,7 @@ jobs:
           done
 
           # READMEを更新
-          sed -i "s|<!-- DEP-VERSIONS-START -->.*<!-- DEP-VERSIONS-END -->|<!-- DEP-VERSIONS-START -->\n${BADGES}<!-- DEP-VERSIONS-END -->|" README.md
+          sed -z -i "s|<!-- DEP-VERSIONS-START -->.*<!-- DEP-VERSIONS-END -->|<!-- DEP-VERSIONS-START -->\n${BADGES}<!-- DEP-VERSIONS-END -->|" README.md
 
           git add .
           git commit -m "Bump version to ${{ steps.get_version.outputs.version }}"
