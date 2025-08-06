@@ -4,7 +4,7 @@
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/konokenj.cdk-api-mcp-server.svg)](https://pypi.org/project/konokenj.cdk-api-mcp-server)
 
 <!-- DEP-VERSIONS-START -->
-[![aws-cdk](https://img.shields.io/badge/aws%20cdk-v2.209.0-blue.svg)](https://github.com/konokenj/cdk-api-mcp-server/blob/main/current-versions/aws-cdk.txt)
+[![aws-cdk](https://img.shields.io/badge/aws%20cdk-v2.209.1-blue.svg)](https://github.com/konokenj/cdk-api-mcp-server/blob/main/current-versions/aws-cdk.txt)
 <!-- DEP-VERSIONS-END -->
 
 ---
