@@ -1,4 +1,4 @@
 # SPDX-FileCopyrightText: 2025-present Kenji Kono <konoken@amazon.co.jp>
 #
 # SPDX-License-Identifier: MIT
-__version__ = "0.60.0"
+__version__ = "0.61.0"
