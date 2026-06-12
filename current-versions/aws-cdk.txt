@@ -1,7 +1,7 @@
 {
-  "version": "v2.258.1",
-  "timestamp": "2026-06-09T09:30:30Z",
-  "processed_at": "2026-06-09T09:35:15Z",
+  "version": "v2.259.0",
+  "timestamp": "2026-06-12T09:53:11Z",
+  "processed_at": "2026-06-12T12:15:44Z",
   "markdown_files": 165,
-  "integ_test_files": 2852
+  "integ_test_files": 2854
 }
